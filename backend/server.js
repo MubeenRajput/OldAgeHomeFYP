@@ -17,7 +17,7 @@ app.use(express.json())
 app.use(cors(corsOptions))
 
 mongoose
-  .connect(`${process.env.MONGO_URI}`)
+  .connect(`mongodb+srv://hello:hello123@restaurant.8j8yw.mongodb.net/oldAgeHome`)
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err))
 
