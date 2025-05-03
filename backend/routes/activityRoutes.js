@@ -1,6 +1,7 @@
 const express = require("express")
 const router = express.Router()
 const Activity = require("../models/Activity")
+const User = require("../models/User")
 
 // Get all activities
 router.get("/", async (req, res) => {
@@ -29,7 +30,7 @@ router.get("/:id", async (req, res) => {
 
 // Create a new activity
 router.post("/", async (req, res) => {
-  const { title, description, type, date, time, duration, capacity, location } = req.body
+  const { title, description, type, date, time, duration, capacity, location, day } = req.body // change 6
 
   try {
     const newActivity = new Activity({
@@ -41,6 +42,7 @@ router.post("/", async (req, res) => {
       duration,
       capacity,
       location,
+      day, // change 6
       participants: 0,
     })
 
@@ -84,37 +86,40 @@ router.delete("/:id", async (req, res) => {
   }
 })
 
-// Get activity statistics for admin dashboard
+// Get dashboard statistics
 router.get("/stats/overview", async (req, res) => {
   try {
+    // Count total users
+    const totalUsers = await User.countDocuments()
+
+    // Count total residents
+    const totalResidents = await User.countDocuments({ role: "resident" })
+
+    // Count total caregivers
+    const totalCaregivers = await User.countDocuments({ role: "caregiver" })
+
+    // Count total activities
     const totalActivities = await Activity.countDocuments()
-    const totalFitness = await Activity.countDocuments({ type: "fitness" })
-    const totalCreative = await Activity.countDocuments({ type: "creative" })
-    const totalTherapy = await Activity.countDocuments({ type: "therapy" })
-    const totalSocial = await Activity.countDocuments({ type: "social" })
-    const totalHealth = await Activity.countDocuments({ type: "health" })
 
     // Get upcoming activities (next 5)
     const today = new Date()
     const formattedDate = today.toISOString().split("T")[0]
-
     const upcomingActivities = await Activity.find({
       date: { $gte: formattedDate },
     })
       .sort({ date: 1, time: 1 })
       .limit(5)
 
+    // Send the aggregated data
     res.json({
+      totalUsers,
+      totalResidents,
+      totalCaregivers,
       totalActivities,
-      totalFitness,
-      totalCreative,
-      totalTherapy,
-      totalSocial,
-      totalHealth,
       upcomingActivities,
     })
   } catch (err) {
-    console.log(err)
+    console.error("Error fetching dashboard stats:", err)
     res.status(500).json({ message: "Server Error" })
   }
 })

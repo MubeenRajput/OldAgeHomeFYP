@@ -8,6 +8,7 @@ import AdminSidebar from "../components/AdminSidebar"
 import UsersManagement from "../components/admin/UsersManagement"
 import ActivitiesTracker from "../components/admin/ActivitiesTracker"
 import "../styles/admin.css"
+import axios from "axios"
 
 function AdminDashboard() {
   // Accessing the authenticated user from the AuthContext
@@ -25,30 +26,35 @@ function AdminDashboard() {
     totalResidents: 0,
     totalCaregivers: 0,
     totalActivities: 0,
+    upcomingActivities: [],
   })
+
+  // State to manage loading and error states
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
   // useEffect runs when the component mounts or when `user` or `navigate` changes
   useEffect(() => {
     // Redirect to home if the user is not an admin
     if (!user || !user.isAdmin) {
       navigate("/")
+    } else {
+      // Fetch the dashboard statistics
+      fetchDashboardStats()
     }
-
-    // Fetch the dashboard statistics
-    fetchDashboardStats()
   }, [user, navigate])
 
-  // Function to fetch dashboard statistics (mock data for now)
+  // Function to fetch dashboard statistics from the API
   const fetchDashboardStats = async () => {
+    setLoading(true)
     try {
-      setStats({
-        totalUsers: 10,
-        totalResidents: 1,
-        totalCaregivers: 12,
-        totalActivities: 24,
-      })
-    } catch (error) {
-      console.error("Error fetching dashboard stats:", error)
+      const res = await axios.get("http://localhost:5000/api/activities/stats/overview")
+      setStats(res.data)
+      setLoading(false)
+    } catch (err) {
+      console.error("Error fetching dashboard stats:", err)
+      setError("Failed to fetch dashboard statistics")
+      setLoading(false)
     }
   }
 
@@ -66,93 +72,63 @@ function AdminDashboard() {
         return (
           <div className="dashboard-overview">
             <h2>Dashboard Overview</h2>
-            <div className="stats-grid">
-              {/* Displaying statistics in cards */}
-              <div className="stat-card">
-                <div className="stat-icon users-icon"></div>
-                <div className="stat-content">
-                  <h3>Total Users</h3>
-                  <p className="stat-number">{stats.totalUsers}</p>
+            {loading ? (
+              <p>Loading...</p>
+            ) : error ? (
+              <p className="error-message">{error}</p>
+            ) : (
+              <div>
+                <div className="stats-grid">
+                  {/* Displaying statistics in cards */}
+                  <div className="stat-card">
+                    <div className="stat-icon users-icon"></div>
+                    <div className="stat-content">
+                      <h3>Total Users</h3>
+                      <p className="stat-number">{stats.totalUsers}</p>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-icon heart-icon"></div>
+                    <div className="stat-content">
+                      <h3>Residents</h3>
+                      <p className="stat-number">{stats.totalResidents}</p>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-icon shield-icon"></div>
+                    <div className="stat-content">
+                      <h3>Caregivers</h3>
+                      <p className="stat-number">{stats.totalCaregivers}</p>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-icon calendar-icon"></div>
+                    <div className="stat-content">
+                      <h3>Activities</h3>
+                      <p className="stat-number">{stats.totalActivities}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon heart-icon"></div>
-                <div className="stat-content">
-                  <h3>Residents</h3>
-                  <p className="stat-number">{stats.totalResidents}</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon shield-icon"></div>
-                <div className="stat-content">
-                  <h3>Caregivers</h3>
-                  <p className="stat-number">{stats.totalCaregivers}</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon calendar-icon"></div>
-                <div className="stat-content">
-                  <h3>Activities</h3>
-                  <p className="stat-number">{stats.totalActivities}</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Recent activities section */}
-            <div className="recent-section">
-              <h3>Recent Activities</h3>
-              <div className="recent-list">
-                <div className="recent-item">
-                  <div className="recent-icon calendar-icon"></div>
-                  <div className="recent-content">
-                    <h4>Morning Yoga Session</h4>
-                    <p>Scheduled for today at 9:00 AM</p>
-                  </div>
-                </div>
-                <div className="recent-item">
-                  <div className="recent-icon calendar-icon"></div>
-                  <div className="recent-content">
-                    <h4>Art & Craft Workshop</h4>
-                    <p>Scheduled for tomorrow at 2:00 PM</p>
-                  </div>
-                </div>
-                <div className="recent-item">
-                  <div className="recent-icon calendar-icon"></div>
-                  <div className="recent-content">
-                    <h4>Music Therapy</h4>
-                    <p>Scheduled for Wednesday at 11:00 AM</p>
+                {/* Upcoming activities section */}
+                <div className="recent-section">
+                  <h3>Upcoming Activities</h3>
+                  <div className="recent-list">
+                    {stats.upcomingActivities.map((activity) => (
+                      <div key={activity._id} className="recent-item">
+                        <div className="recent-icon calendar-icon"></div>
+                        <div className="recent-content">
+                          <h4>{activity.title}</h4>
+                          <p>
+                            Scheduled for {activity.date} at {activity.time}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Recent user registrations section */}
-            <div className="recent-section">
-              <h3>Recent User Registrations</h3>
-              <div className="recent-list">
-                <div className="recent-item">
-                  <div className="recent-icon users-icon"></div>
-                  <div className="recent-content">
-                    <h4>John Smith</h4>
-                    <p>Registered as Family Member</p>
-                  </div>
-                </div>
-                <div className="recent-item">
-                  <div className="recent-icon users-icon"></div>
-                  <div className="recent-content">
-                    <h4>Maria Garcia</h4>
-                    <p>Registered as Caregiver</p>
-                  </div>
-                </div>
-                <div className="recent-item">
-                  <div className="recent-icon users-icon"></div>
-                  <div className="recent-content">
-                    <h4>Robert Johnson</h4>
-                    <p>Registered as Healthcare Professional</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         )
     }

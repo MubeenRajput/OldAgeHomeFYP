@@ -20,6 +20,7 @@ function ActivitiesTracker() {
     duration: 60,
     capacity: 15,
     location: "Main Hall",
+    Day: '', // change 1
   })
 
   // Fetch activities from the backend
@@ -54,6 +55,7 @@ function ActivitiesTracker() {
         duration: 60,
         capacity: 15,
         location: "Main Hall",
+        day: '', // change 2
       })
     } catch (err) {
       setError("Failed to add activity")
@@ -163,6 +165,10 @@ function ActivitiesTracker() {
                   <div className="activity-detail">
                     <span className="detail-label">Location:</span>
                     <span className="detail-value">{activity.location}</span>
+                  </div>
+                  {/* Change 3 */}               <div className="activity-detail">
+                    <span className="detail-label">Day:</span>
+                    <span className="detail-value">{activity.day}</span>
                   </div>
                   <div className="activity-detail">
                     <span className="detail-label">Capacity:</span>
@@ -283,6 +289,17 @@ function ActivitiesTracker() {
                     min="1"
                     max="100"
                     value={newActivity.capacity}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                {/* Change 4 */} <div className="form-group">
+                  <label htmlFor="day">day</label>
+                  <input
+                    type="text"
+                    id="day"
+                    name="day"
+                    value={newActivity.day}
                     onChange={handleInputChange}
                     required
                   />
