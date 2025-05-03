@@ -17,7 +17,7 @@ app.use(express.json())
 app.use(cors(corsOptions))
 
 mongoose
-  .connect(`mongodb+srv://OldAgeHome:12345@cluster0.6c94u7q.mongodb.net/OldAgeHome`)
+  .connect(`mongodb+srv://OldHomeAge:12345@cluster0.loz36zw.mongodb.net/OldHomeAge`)
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err))
 
