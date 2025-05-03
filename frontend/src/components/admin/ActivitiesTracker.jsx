@@ -11,6 +11,7 @@ function ActivitiesTracker() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
   const [newActivity, setNewActivity] = useState({
     title: "",
     description: "",
@@ -20,8 +21,9 @@ function ActivitiesTracker() {
     duration: 60,
     capacity: 15,
     location: "Main Hall",
-    Day: '', // change 1
+    day: "",
   })
+  const [currentActivityId, setCurrentActivityId] = useState(null)
 
   // Fetch activities from the backend
   useEffect(() => {
@@ -46,19 +48,25 @@ function ActivitiesTracker() {
       const res = await axios.post("http://localhost:5000/api/activities", newActivity)
       setActivities([...activities, res.data]) // Add the new activity to the list
       setShowAddModal(false)
-      setNewActivity({
-        title: "",
-        description: "",
-        type: "social",
-        date: "",
-        time: "",
-        duration: 60,
-        capacity: 15,
-        location: "Main Hall",
-        day: '', // change 2
-      })
+      resetActivityForm()
     } catch (err) {
       setError("Failed to add activity")
+    }
+  }
+
+  const handleUpdateActivity = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await axios.put(`http://localhost:5000/api/activities/${currentActivityId}`, newActivity)
+      setActivities(
+        activities.map((activity) =>
+          activity._id === currentActivityId ? res.data : activity
+        )
+      ) // Update the activity in the list
+      setShowUpdateModal(false)
+      resetActivityForm()
+    } catch (err) {
+      setError("Failed to update activity")
     }
   }
 
@@ -81,6 +89,27 @@ function ActivitiesTracker() {
     })
   }
 
+  const handleEditClick = (activity) => {
+    setCurrentActivityId(activity._id)
+    setNewActivity(activity)
+    setShowUpdateModal(true)
+  }
+
+  const resetActivityForm = () => {
+    setNewActivity({
+      title: "",
+      description: "",
+      type: "social",
+      date: "",
+      time: "",
+      duration: 60,
+      capacity: 15,
+      location: "Main Hall",
+      day: "",
+    })
+    setCurrentActivityId(null)
+  }
+
   const filteredActivities = activities.filter((activity) => {
     const matchesSearch =
       activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,18 +120,6 @@ function ActivitiesTracker() {
 
     return matchesSearch && matchesType
   })
-
-  const formatDateTime = (date, time) => {
-    const dateObj = new Date(`${date}T${time}`)
-    return dateObj.toLocaleString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      hour12: true,
-    })
-  }
 
   return (
     <div className="activities-tracker">
@@ -156,7 +173,7 @@ function ActivitiesTracker() {
                 <div className="activity-details">
                   <div className="activity-detail">
                     <span className="detail-label">When:</span>
-                    <span className="detail-value">{formatDateTime(activity.date, activity.time)}</span>
+                    <span className="detail-value">{activity.date} at {activity.time}</span>
                   </div>
                   <div className="activity-detail">
                     <span className="detail-label">Duration:</span>
@@ -166,7 +183,7 @@ function ActivitiesTracker() {
                     <span className="detail-label">Location:</span>
                     <span className="detail-value">{activity.location}</span>
                   </div>
-                  {/* Change 3 */}               <div className="activity-detail">
+                  <div className="activity-detail">
                     <span className="detail-label">Day:</span>
                     <span className="detail-value">{activity.day}</span>
                   </div>
@@ -178,6 +195,13 @@ function ActivitiesTracker() {
                   </div>
                 </div>
                 <div className="activity-actions">
+                  <button
+                    className="action-btn edit-btn"
+                    title="Edit Activity"
+                    onClick={() => handleEditClick(activity)}
+                  >
+                    Edit
+                  </button>
                   <button
                     className="action-btn delete-btn"
                     title="Delete Activity"
@@ -192,6 +216,7 @@ function ActivitiesTracker() {
         </div>
       )}
 
+      {/* Add Activity Modal */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -202,109 +227,7 @@ function ActivitiesTracker() {
               </button>
             </div>
             <form onSubmit={handleAddActivity}>
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label htmlFor="title">Activity Title</label>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={newActivity.title}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group full-width">
-                  <label htmlFor="description">Description</label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={newActivity.description}
-                    onChange={handleInputChange}
-                    required
-                  ></textarea>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="type">Activity Type</label>
-                  <select id="type" name="type" value={newActivity.type} onChange={handleInputChange} required>
-                    <option value="fitness">Fitness</option>
-                    <option value="creative">Creative</option>
-                    <option value="therapy">Therapy</option>
-                    <option value="social">Social</option>
-                    <option value="health">Health</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="location">Location</label>
-                  <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    value={newActivity.location}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="date">Date</label>
-                  <input
-                    type="date"
-                    id="date"
-                    name="date"
-                    value={newActivity.date}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="time">Time</label>
-                  <input
-                    type="time"
-                    id="time"
-                    name="time"
-                    value={newActivity.time}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="duration">Duration (minutes)</label>
-                  <input
-                    type="number"
-                    id="duration"
-                    name="duration"
-                    min="15"
-                    max="240"
-                    value={newActivity.duration}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="capacity">Capacity</label>
-                  <input
-                    type="number"
-                    id="capacity"
-                    name="capacity"
-                    min="1"
-                    max="100"
-                    value={newActivity.capacity}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                {/* Change 4 */} <div className="form-group">
-                  <label htmlFor="day">day</label>
-                  <input
-                    type="text"
-                    id="day"
-                    name="day"
-                    value={newActivity.day}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
+              <ActivityForm newActivity={newActivity} handleInputChange={handleInputChange} />
               <div className="modal-footer">
                 <button type="button" className="btn secondary-btn" onClick={() => setShowAddModal(false)}>
                   Cancel
@@ -317,6 +240,139 @@ function ActivitiesTracker() {
           </div>
         </div>
       )}
+
+      {/* Update Activity Modal */}
+      {showUpdateModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Update Activity</h3>
+              <button className="close-btn" onClick={() => setShowUpdateModal(false)}>
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleUpdateActivity}>
+              <ActivityForm newActivity={newActivity} handleInputChange={handleInputChange} />
+              <div className="modal-footer">
+                <button type="button" className="btn secondary-btn" onClick={() => setShowUpdateModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn primary-btn">
+                  Update Activity
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ActivityForm({ newActivity, handleInputChange }) {
+  return (
+    <div className="form-grid">
+      <div className="form-group full-width">
+        <label htmlFor="title">Activity Title</label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          value={newActivity.title}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="form-group full-width">
+        <label htmlFor="description">Description</label>
+        <textarea
+          id="description"
+          name="description"
+          value={newActivity.description}
+          onChange={handleInputChange}
+          required
+        ></textarea>
+      </div>
+      <div className="form-group">
+        <label htmlFor="type">Activity Type</label>
+        <select id="type" name="type" value={newActivity.type} onChange={handleInputChange} required>
+          <option value="fitness">Fitness</option>
+          <option value="creative">Creative</option>
+          <option value="therapy">Therapy</option>
+          <option value="social">Social</option>
+          <option value="health">Health</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label htmlFor="location">Location</label>
+        <input
+          type="text"
+          id="location"
+          name="location"
+          value={newActivity.location}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="date">Date</label>
+        <input
+          type="date"
+          id="date"
+          name="date"
+          value={newActivity.date}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="time">Time</label>
+        <input
+          type="time"
+          id="time"
+          name="time"
+          value={newActivity.time}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="duration">Duration (minutes)</label>
+        <input
+          type="number"
+          id="duration"
+          name="duration"
+          min="15"
+          max="240"
+          value={newActivity.duration}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="capacity">Capacity</label>
+        <input
+          type="number"
+          id="capacity"
+          name="capacity"
+          min="1"
+          max="100"
+          value={newActivity.capacity}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="day">Day</label>
+        <input
+          type="text"
+          id="day"
+          name="day"
+          value={newActivity.day}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
     </div>
   )
 }
